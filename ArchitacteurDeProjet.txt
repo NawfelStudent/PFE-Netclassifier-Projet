@@ -1,0 +1,58 @@
+README.md
+requirements.txt
+.env                          # Variables d'environnement
+manage.py                     # Script de gestion (init, start, stop)
+
+config/
+    settings.py               # Configuration centrale
+    policies.json             # Règles par profil (Allow/Block/Limit)
+    time_rules.json           # Règles horaires
+
+core/                         # COUCHE MÉTIER (backend)
+    __init__.py
+    capture.py                # NFStream : capture + extraction features
+    classifier.py             # Modèle ML : classification des flux
+    policy_engine.py          # Moteur de politiques (décision)
+    enforcer.py               # Application des décisions (iptables/tc)
+    resolver.py               # Mapping IP à utilisateur à profil
+
+ml/                           # COUCHE ML
+    train_model.py            # Entraînement (notebooks FlowFrontiers adaptés)
+    models/
+        classifier.joblib     # Modèle Random Forest sérialisé
+        scaler.joblib         # StandardScaler sérialisé
+        label_encoder.joblib  # Encodeur de catégories
+    datasets/
+        training_data.csv     # Dataset étiqueté (lab)
+
+web/                          # COUCHE WEB (Flask + Dashboard)
+    __init__.py
+    app.py                    # Application Flask principale
+    auth.py                   # Portail captif (login/logout)
+    api.py                    # API REST (données temps réel)
+    templates/
+        base.html             # Template de base (navbar + layout)
+        login.html            # Page portail captif
+        dashboard.html        # Dashboard principal
+        users.html            # Gestion utilisateurs/profils
+        policies.html         # Gestion des règles
+        logs.html             # Journal d'activité
+    static/
+        css/style.css
+        js/dashboard.js       # Charts temps réel (Chart.js)
+        js/api_client.js      # Appels API depuis le frontend
+
+db/
+    database.py               # Gestion SQLite (ORM léger)
+    schema.sql                # Schéma de la BDD
+    netclassifier.db          # Base SQLite (créée au runtime)
+
+services/                     # SERVICES SYSTÈME
+    netclassifier.service     # Unité systemd (classifieur)
+    netclassifier-web.service # Unité systemd (dashboard web)
+    setup_network.sh          # Script config réseau (iptables, forwarding)
+
+tests/
+    test_classifier.py
+    test_policies.py
+    test_pcap/                # Fichiers PCAP de test
