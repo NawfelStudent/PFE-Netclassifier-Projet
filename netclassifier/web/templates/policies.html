@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Politiques - NetClassifier{% endblock %}
+
+{% block content %}
+<div class="section">
+    <h2>Règles de politique par profil</h2>
+    <p class="hint">Modifiez l'action directement dans le tableau. Les changements sont appliqués immédiatement.</p>
+
+    {% for profile_name, rules in grouped_policies.items() %}
+    <div class="policy-group">
+        <h3><span class="badge badge-{{ profile_name }}">{{ profile_name }}</span></h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Catégorie</th><th>Action</th>
+                        <th>Bande passante</th><th>Horaire</th><th>Actif</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in rules %}
+                    <tr>
+                        <td>{{ r.category }}</td>
+                        <td style="position:relative;">
+                            <select aria-label="Action"
+                                    id="policy-sel-{{ r.id if r.id else 'null' }}"
+                                    onchange="updatePolicy({{ r.id if r.id else 'null' }}, this)">
+                                {% for a in ['Allow','Block','Limit','Log'] %}
+                                <option value="{{ a }}" {% if r.action == a %}selected{% endif %}>{{ a }}</option>
+                                {% endfor %}
+                            </select>
+                            <span id="policy-status-{{ r.id if r.id else 'null' }}"
+                                  style="margin-left:8px;font-size:12px;"></span>
+                        </td>
+                        <td>{{ (r.bandwidth_kbps|string + ' kbps') if r.bandwidth_kbps else '-' }}</td>
+                        <td>{{ (r.time_start + ' - ' + r.time_end) if r.time_start else 'Toujours' }}</td>
+                        <td>{{ "" if r.is_active else "" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]')?.content ?? "";
+
+async function updatePolicy(ruleId, selectElement) {
+    const statusElement = document.getElementById(`policy-status-${ruleId}`);
+    statusElement.textContent = "Mise à jour...";
+    try {
+        const response = await fetch(`/api/policies/${ruleId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': CSRF
+            },
+            body: JSON.stringify({ action: selectElement.value })
+        });
+        if (!response.ok) {
+            throw new Error('Erreur lors de la mise à jour');
+        }
+        statusElement.textContent = "✔️";
+    } catch (error) {
+        statusElement.textContent = "❌";
+        alert(error.message);
+    }
+}
+</script>
+{% endblock %}

@@ -1,1 +1,1 @@
-# Initialisation du module web
+# web/__init__.py le Vide, rend le dossier importable en tant que package Python
