@@ -1,0 +1,1 @@
+# Décision (autoriser, bloquer, limiter)

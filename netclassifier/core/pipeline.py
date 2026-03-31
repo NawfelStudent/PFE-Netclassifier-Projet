@@ -1,0 +1,1 @@
+# Pipeline global (capture → décision)

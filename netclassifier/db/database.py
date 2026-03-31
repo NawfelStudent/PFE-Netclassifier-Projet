@@ -1,0 +1,1 @@
+# Connexion SQLite et fonctions associées

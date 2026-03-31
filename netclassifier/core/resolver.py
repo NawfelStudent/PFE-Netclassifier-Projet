@@ -1,0 +1,1 @@
+# Résolution IP → MAC → profil utilisateur

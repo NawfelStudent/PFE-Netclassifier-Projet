@@ -1,0 +1,1 @@
+# Tests pour les règles de configuration

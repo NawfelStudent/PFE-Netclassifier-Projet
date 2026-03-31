@@ -1,0 +1,1 @@
+# Communication interne (publish/subscribe)
