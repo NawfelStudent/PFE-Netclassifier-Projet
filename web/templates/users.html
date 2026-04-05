@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Utilisateurs - NetClassifier{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="section-header">
+<h2>Utilisateurs ({{ users|length }})</h2>
+{% if profile == 'admin' %}
+<button class="btn-primary" onclick="showAddUser()">+ Ajouter</button>
+{% endif %}
+    </div>
+    <div class="table-wrapper">
+<table>
+    <thead>
+<tr>
+    <th>ID</th>
+    <th>Nom d'utilisateur</th>
+    <th>Nom complet</th>
+    <th>Profil</th>
+    <th>Statut</th>
+    <th>Créé le</th>
+    {% if profile == 'admin' %}<th>Actions</th>{% endif %}
+</tr>
+    </thead>
+    <tbody>
+{% for u in users %}
+<tr id="row-{{ u.id }}">
+    <td>{{ u.id }}</td>
+    <td><strong>{{ u.username }}</strong></td>
+    <td>{{ u.full_name }}</td>
+    <td>
+<span class="badge badge-{{ u.profile }}" id="badge-{{ u.id }}">{{ u.profile }}</span>
+    </td>
+    <td>{{ "Actif" if u.is_active else "Inactif" }}</td>
+    <td>{{ u.created_at[:16] if u.created_at else '' }}</td>
+    {% if profile == 'admin' %}
+    <td style="display:flex;gap:8px;align-items:center;">
+<select id="sel-{{ u.id }}"
+onchange="changeProfile({{ u.id }}, this.value)"
+{% if u.username == user %}disabled title="Votre propre compte"{% endif %}>
+    {% for p in ['etudiant','employe','admin','invite','restricted'] %}
+    <option value="{{ p }}" {{ 'selected' if u.profile == p }}>{{ p }}</option>
+    {% endfor %}
+</select>
+{% if u.username != user %}
+<button class="btn-danger"
+onclick="confirmDelete({{ u.id }}, '{{ u.username }}')">
+    Supprimer
+</button>
+{% endif %}
+    </td>
+    {% endif %}
+</tr>
+{% endfor %}
+    </tbody>
+</table>
+    </div>
+</div>
+
+<div class="section">
+    <h2>Sessions actives ({{ sessions|length }})</h2>
+    <div class="table-wrapper">
+<table>
+    <thead>
+<tr>
+    <th>IP</th><th>Utilisateur</th><th>Profil</th>
+    <th>Connecté depuis</th><th>Expire à</th>
+</tr>
+    </thead>
+    <tbody>
+{% for s in sessions %}
+<tr>
+    <td>{{ s.ip_address }}</td>
+    <td><strong>{{ s.username }}</strong></td>
+    <td><span class="badge badge-{{ s.profile }}">{{ s.profile }}</span></td>
+    <td>{{ s.login_time[:16] if s.login_time else '' }}</td>
+    <td>{{ s.expires_at[:16] if s.expires_at else '' }}</td>
+</tr>
+{% endfor %}
+    </tbody>
+</table>
+    </div>
+</div>
+
+<!-- Modal ajout utilisateur -->
+<div id="addUserModal" class="modal" style="display:none;">
+    <div class="modal-content">
+<h3>Nouvel utilisateur</h3>
+<input type="text"     id="newUsername" placeholder="Nom d'utilisateur">
+<input type="password" id="newPassword" placeholder="Mot de passe">
+<input type="text"     id="newFullname" placeholder="Nom complet">
+<select id="newProfile">
+    <option value="etudiant">Étudiant</option>
+    <option value="employe">Employé</option>
+    <option value="invite" selected>Invité</option>
+    <option value="restricted">Restreint</option>
+</select>
+<div id="addUserError" style="color:#ff1744;font-size:13px;display:none;margin-top:6px;"></div>
+<div class="modal-actions">
+    <button onclick="submitAddUser()" class="btn-primary">Créer</button>
+    <button onclick="hideAddUser()"   class="btn-secondary">Annuler</button>
+</div>
+    </div>
+</div>
+
+<!-- Modal confirmation suppression -->
+<div id="deleteModal" class="modal" style="display:none;">
+    <div class="modal-content">
+<h3>Confirmer la suppression</h3>
+<p id="deleteModalMsg" style="margin:12px 0;font-size:14px;color:var(--text-secondary)"></p>
+<div class="modal-actions">
+    <button id="deleteConfirmBtn" class="btn-danger">Supprimer</button>
+    <button onclick="hideDeleteModal()" class="btn-secondary">Annuler</button>
+</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CSRF = document.querySelector('meta[name="csrf-token"]')?.content ?? "";
+
+function apiFetch(url, opts = {}) {
+    return fetch(url, {
+...opts,
+headers: { "Content-Type": "application/json", "X-CSRFToken": CSRF, ...(opts.headers ?? {}) }
+    });
+}
+
+// --- Modal ajout ---
+function showAddUser() { document.getElementById('addUserModal').style.display = 'flex'; }
+function hideAddUser()  { document.getElementById('addUserModal').style.display = 'none'; }
+
+async function submitAddUser() {
+    const errEl = document.getElementById('addUserError');
+    errEl.style.display = 'none';
+    try {
+const res = await apiFetch('/api/users', {
+    method: 'POST',
+    body: JSON.stringify({
+username:  document.getElementById('newUsername').value.trim(),
+password:  document.getElementById('newPassword').value,
+full_name: document.getElementById('newFullname').value.trim(),
+profile:   document.getElementById('newProfile').value
+    })
+});
+if (res.ok) { location.reload(); }
+else {
+    const data = await res.json();
+    errEl.textContent = data.error ?? "Erreur inconnue";
+    errEl.style.display = 'block';
+}
+    } catch (e) {
+errEl.textContent = "Erreur réseau : " + e.message;
+errEl.style.display = 'block';
+    }
+}
+
+// --- Changement de profil (sans rechargement) ---
+async function changeProfile(userId, newProfile) {
+    const badge = document.getElementById(`badge-${userId}`);
+    badge.textContent = "Mise à jour...";
+    try {
+const response = await fetch(`/api/users/${userId}/profile`, {
+    method: 'PUT',
+    headers: {
+'Content-Type': 'application/json',
+'X-CSRF-Token': CSRF
+    },
+    body: JSON.stringify({ profile: newProfile })
+});
+if (!response.ok) {
+    throw new Error('Erreur lors du changement de profil');
+}
+badge.textContent = newProfile;
+    } catch (error) {
+badge.textContent = "Erreur";
+alert(error.message);
+    }
+}
+
+// --- Suppression avec confirmation ---
+let _deleteTargetId = null;
+
+function confirmDelete(userId, username) {
+    if (confirm(`Êtes-vous sûr de vouloir supprimer ${username} ?`)) {
+_deleteTargetId = userId;
+document.getElementById('deleteModalMsg').textContent =
+    `Supprimer l'utilisateur « ${username} » ? Cette action est irréversible.`;
+document.getElementById('deleteModal').style.display = 'flex';
+    }
+}
+
+function hideDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    _deleteTargetId = null;
+}
+
+document.getElementById('deleteConfirmBtn').addEventListener('click', async () => {
+    if (!_deleteTargetId) return;
+    try {
+const res = await apiFetch(`/api/users/${_deleteTargetId}`, { method: 'DELETE' });
+if (res.ok) {
+    const row = document.getElementById(`row-${_deleteTargetId}`);
+    if (row) row.remove();
+    hideDeleteModal();
+} else {
+    const data = await res.json();
+    alert("Erreur : " + (data.error ?? "inconnue"));
+}
+    } catch (e) {
+alert("Erreur réseau : " + e.message);
+    }
+});
+</script>
+{% endblock %}

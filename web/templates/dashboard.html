@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - NetClassifier{% endblock %}
+
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- KPI Cards -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+<div class="kpi-value" id="kpi-flows">0</div>
+<div class="kpi-label">Flux / minute</div>
+    </div>
+    <div class="kpi-card">
+<div class="kpi-value" id="kpi-bandwidth">0</div>
+<div class="kpi-label">Mo / minute</div>
+    </div>
+    <div class="kpi-card">
+<div class="kpi-value" id="kpi-users">0</div>
+<div class="kpi-label">Utilisateurs actifs</div>
+    </div>
+    <div class="kpi-card card-block">
+<div class="kpi-value" id="kpi-blocked">0</div>
+<div class="kpi-label">Flux bloqué</div>
+    </div>
+    <div class="kpi-card card-limit">
+<div class="kpi-value" id="kpi-limited">0</div>
+<div class="kpi-label">Flux limité</div>
+    </div>
+    <div class="kpi-card card-suspect">
+<div class="kpi-value" id="kpi-suspect">0</div>
+<div class="kpi-label">Suspects</div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="charts-grid">
+    <div class="chart-box">
+<h3>Répartition par catégorie</h3>
+<canvas id="chartCategories"></canvas>
+    </div>
+    <div class="chart-box">
+<h3>Actions appliquées</h3>
+<canvas id="chartActions"></canvas>
+    </div>
+    <div class="chart-box chart-wide">
+<h3>Trafic par minute (dernière heure)</h3>
+<canvas id="chartTimeline" height="80"></canvas>
+    </div>
+</div>
+
+<!-- Live Flow Table -->
+<div class="section">
+    <h3>Derniers flux (temps réel)</h3>
+    <div class="table-wrapper">
+<table>
+    <thead>
+<tr>
+    <th>Heure</th>
+    <th>Utilisateur</th>
+    <th>Source</th>
+    <th>Destination</th>
+    <th>App / SNI</th>
+    <th>Catégorie</th>
+    <th>Confiance</th>
+    <th>Action</th>
+</tr>
+    </thead>
+    <tbody id="flowTableBody"></tbody>
+</table>
+    </div>
+</div>
+<script>
+function showLoadingIndicator(chartId) {
+    const chartElement = document.getElementById(chartId);
+    chartElement.innerHTML = '<p>Chargement...</p>';
+}
+
+// Example usage
+showLoadingIndicator('chartCategories');
+showLoadingIndicator('chartActions');
+showLoadingIndicator('chartTimeline');
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

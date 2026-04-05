@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portail Réseau - Connexion</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body>
+    <div class="login-box">
+<h1>⚡ Portail Réseau</h1>
+<p class="subtitle">Authentifiez-vous pour accéder au réseau</p>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" style="color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+<form method="POST" action="{{ url_for('auth.login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-group">
+<label for="username">Nom d'utilisateur</label>
+<input type="text" id="username" name="username" placeholder="ex: ahmed" required autofocus aria-label="Nom d'utilisateur">
+    </div>
+    <div class="form-group">
+<label for="password">Mot de passe</label>
+<input type="password" id="password" name="password" placeholder="Mot de passe" required autocomplete="off" aria-label="Mot de passe">
+    </div>
+    <button type="submit">Se connecter</button>
+</form>
+
+<p class="info">
+    Votre IP : {{ client_ip }}<br>
+    Session valide {{ hours }}h après connexion
+</p>
+
+<p class="success-msg" style="display:none;">Connexion réussie !</p>
+
+<script>
+// Example logic to show success message
+function showSuccessMessage() {
+    const successMsg = document.querySelector('.success-msg');
+    successMsg.style.display = 'block';
+}
+</script>
+    </div>
+</body>
+</html>
